@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2d5a27" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GreenBee" />
+  <meta name="description" content="GreenBee – Your personal notes, voice memos, and HTML viewer" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>GreenBee</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     SIDE PANEL (drawer)
+══════════════════════════════════════════ -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<nav class="side-panel" id="sidePanel" role="navigation" aria-label="Main navigation">
+  <div class="panel-header">
+    <div class="logo-mark">
+      <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+        <ellipse cx="20" cy="22" rx="13" ry="11" fill="#f5c842"/>
+        <ellipse cx="20" cy="22" rx="13" ry="11" fill="url(#beeBody)"/>
+        <rect x="10" y="19" width="20" height="4" rx="2" fill="#2d2d2d" opacity="0.35"/>
+        <rect x="11" y="24" width="18" height="3.5" rx="1.75" fill="#2d2d2d" opacity="0.25"/>
+        <ellipse cx="13" cy="14" rx="6" ry="4" fill="white" opacity="0.75" transform="rotate(-25 13 14)"/>
+        <ellipse cx="27" cy="14" rx="6" ry="4" fill="white" opacity="0.75" transform="rotate(25 27 14)"/>
+        <circle cx="17" cy="21" r="1.5" fill="#2d2d2d" opacity="0.6"/>
+        <circle cx="23" cy="21" r="1.5" fill="#2d2d2d" opacity="0.6"/>
+        <defs>
+          <linearGradient id="beeBody" x1="20" y1="11" x2="20" y2="33" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#f5c842"/>
+            <stop offset="100%" stop-color="#e8a800"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <span class="logo-green">Green</span><span class="logo-bee">Bee</span>
+    </div>
+    <button class="panel-close" onclick="closePanel()" aria-label="Close menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <ul class="nav-list" role="list">
+    <li>
+      <button class="nav-item active" onclick="navigate('home')" data-view="home">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </span>
+        <span class="nav-label">Home</span>
+      </button>
+    </li>
+    <li>
+      <button class="nav-item" onclick="navigate('html-notes')" data-view="html-notes">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </span>
+        <span class="nav-label">HTML Files</span>
+        <span class="nav-badge" id="htmlCount">0</span>
+      </button>
+    </li>
+    <li>
+      <button class="nav-item" onclick="navigate('notes')" data-view="notes">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </span>
+        <span class="nav-label">Notes</span>
+      </button>
+    </li>
+    <li>
+      <button class="nav-item" onclick="navigate('voice')" data-view="voice">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </span>
+        <span class="nav-label">Voice Notes</span>
+      </button>
+    </li>
+    <li>
+      <button class="nav-item" onclick="navigate('ai')" data-view="ai">
+        <span class="nav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </span>
+        <span class="nav-label">AI Tools</span>
+        <span class="nav-tag">Soon</span>
+      </button>
+    </li>
+  </ul>
+
+  <div class="panel-footer">
+    <div class="panel-section-title">Coming soon</div>
+    <div class="future-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      Daily Quotes
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     MAIN APP
+══════════════════════════════════════════ -->
+<div class="app-shell" id="appShell">
+
+  <!-- TOP BAR -->
+  <header class="topbar" id="topbar">
+    <button class="hamburger" onclick="openPanel()" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="topbar-title" id="topbarTitle">
+      <span class="logo-green">Green</span><span class="logo-bee">Bee</span>
+    </div>
+    <div class="topbar-actions" id="topbarActions">
+      <!-- dynamic -->
+    </div>
+  </header>
+
+  <!-- ────────────────────────────────
+       VIEW: HOME
+  ──────────────────────────────── -->
+  <main class="view active" id="view-home">
+    <div class="home-hero">
+      <div class="hero-bee">
+        <svg width="64" height="64" viewBox="0 0 40 40" fill="none">
+          <ellipse cx="20" cy="22" rx="13" ry="11" fill="url(#beeBodyLg)"/>
+          <rect x="10" y="19" width="20" height="4" rx="2" fill="#2d2d2d" opacity="0.35"/>
+          <rect x="11" y="24" width="18" height="3.5" rx="1.75" fill="#2d2d2d" opacity="0.25"/>
+          <ellipse cx="13" cy="14" rx="6" ry="4" fill="white" opacity="0.8" transform="rotate(-25 13 14)"/>
+          <ellipse cx="27" cy="14" rx="6" ry="4" fill="white" opacity="0.8" transform="rotate(25 27 14)"/>
+          <circle cx="17" cy="21" r="1.5" fill="#2d2d2d" opacity="0.6"/>
+          <circle cx="23" cy="21" r="1.5" fill="#2d2d2d" opacity="0.6"/>
+          <defs>
+            <linearGradient id="beeBodyLg" x1="20" y1="11" x2="20" y2="33" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#f5c842"/>
+              <stop offset="100%" stop-color="#e8a800"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h1 class="hero-greeting" id="heroGreeting">Good morning</h1>
+      <p class="hero-sub">Your hive of ideas</p>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="statHtml">0</div>
+        <div class="stat-label">HTML Files</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statNotes">0</div>
+        <div class="stat-label">Notes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statVoice">0</div>
+        <div class="stat-label">Voice Memos</div>
+      </div>
+    </div>
+
+    <!-- HTML Files section on home -->
+    <section class="home-section">
+      <div class="section-header">
+        <h2 class="section-title">HTML Files</h2>
+        <button class="section-link" onclick="navigate('html-notes')">View all →</button>
+      </div>
+      <div class="html-grid" id="homeHtmlGrid">
+        <div class="empty-hint" id="homeHtmlEmpty">
+          <p>Drop your HTML notes here.<br/>Tap <strong>+</strong> to add files or folders.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAB -->
+    <button class="fab" id="homeFab" onclick="showHomeAddMenu()" aria-label="Add">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <!-- FAB menu -->
+    <div class="fab-menu hidden" id="homeFabMenu">
+      <button class="fab-option" onclick="triggerHtmlUpload()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Add HTML File
+      </button>
+      <button class="fab-option" onclick="createFolder()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        New Folder
+      </button>
+    </div>
+    <input type="file" id="htmlFileInput" accept=".html,.htm" multiple style="display:none" onchange="handleHtmlUpload(event)" />
+  </main>
+
+  <!-- ────────────────────────────────
+       VIEW: HTML FILES
+  ──────────────────────────────── -->
+  <main class="view" id="view-html-notes">
+    <div class="view-toolbar">
+      <nav class="breadcrumb" id="breadcrumb" aria-label="Folder path">
+        <button class="crumb active" data-path="">All Files</button>
+      </nav>
+      <div class="toolbar-actions">
+        <button class="icon-btn" onclick="triggerHtmlUpload()" title="Add HTML file">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="icon-btn" onclick="createFolder()" title="New folder">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="html-grid" id="htmlGrid">
+      <div class="empty-state" id="htmlEmpty">
+        <div class="empty-icon">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </div>
+        <p>No HTML files yet.<br/>Add your first file to get started.</p>
+        <button class="btn-primary" onclick="triggerHtmlUpload()">Add HTML File</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ────────────────────────────────
+       VIEW: NOTES
+  ──────────────────────────────── -->
+  <main class="view" id="view-notes">
+    <div class="notes-list" id="notesList">
+      <div class="empty-state" id="notesEmpty">
+        <div class="empty-icon">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <p>No notes yet.<br/>Tap + to write your first note.</p>
+      </div>
+    </div>
+    <button class="fab" onclick="openNoteEditor()" aria-label="New note">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </main>
+
+  <!-- ────────────────────────────────
+       VIEW: VOICE
+  ──────────────────────────────── -->
+  <main class="view" id="view-voice">
+    <div class="voice-center">
+      <div class="voice-ring" id="voiceRing">
+        <button class="voice-btn" id="voiceRecordBtn" onclick="toggleRecording()" aria-label="Record voice note">
+          <svg id="voiceMicIcon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+      </div>
+      <p class="voice-hint" id="voiceHint">Tap to record</p>
+      <div class="voice-timer hidden" id="voiceTimer">00:00</div>
+    </div>
+    <div class="voice-recordings" id="voiceRecordings"></div>
+  </main>
+
+  <!-- ────────────────────────────────
+       VIEW: AI TOOLS
+  ──────────────────────────────── -->
+  <main class="view" id="view-ai">
+    <div class="ai-hero">
+      <div class="ai-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <h2>AI Tools</h2>
+      <p>Powerful AI features are being built for you.</p>
+    </div>
+    <div class="ai-tools-grid">
+      <button class="ai-tool-card" onclick="showComingSoon('Smart Summarize')">
+        <div class="ai-tool-icon">✦</div>
+        <div class="ai-tool-name">Smart Summarize</div>
+        <div class="ai-tool-desc">Summarise your HTML notes with AI</div>
+        <div class="coming-soon-badge">Coming Soon</div>
+      </button>
+      <button class="ai-tool-card" onclick="showComingSoon('Voice Transcribe')">
+        <div class="ai-tool-icon">◎</div>
+        <div class="ai-tool-name">Voice Transcribe</div>
+        <div class="ai-tool-desc">Turn voice memos into text</div>
+        <div class="coming-soon-badge">Coming Soon</div>
+      </button>
+      <button class="ai-tool-card" onclick="showComingSoon('Ask My Notes')">
+        <div class="ai-tool-icon">◈</div>
+        <div class="ai-tool-name">Ask My Notes</div>
+        <div class="ai-tool-desc">Chat with your knowledge base</div>
+        <div class="coming-soon-badge">Coming Soon</div>
+      </button>
+      <button class="ai-tool-card" onclick="showComingSoon('Daily Insights')">
+        <div class="ai-tool-icon">◇</div>
+        <div class="ai-tool-name">Daily Insights</div>
+        <div class="ai-tool-desc">AI-curated quotes &amp; ideas</div>
+        <div class="coming-soon-badge">Coming Soon</div>
+      </button>
+    </div>
+  </main>
+
+</div><!-- end app-shell -->
+
+<!-- ══════════════════════════════════════════
+     HTML FILE VIEWER (full-screen overlay)
+══════════════════════════════════════════ -->
+<div class="html-viewer" id="htmlViewer" role="dialog" aria-modal="true" aria-label="HTML file viewer">
+  <div class="viewer-bar">
+    <button class="viewer-close" onclick="closeViewer()" aria-label="Close viewer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Back
+    </button>
+    <span class="viewer-title" id="viewerTitle"></span>
+    <button class="icon-btn" id="viewerDeleteBtn" title="Delete file">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+    </button>
+  </div>
+  <iframe class="viewer-frame" id="viewerFrame" sandbox="allow-scripts allow-same-origin" title="HTML preview"></iframe>
+</div>
+
+<!-- ══════════════════════════════════════════
+     NOTE EDITOR MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="noteEditorOverlay">
+  <div class="modal note-editor-modal">
+    <div class="modal-header">
+      <input class="note-title-input" id="noteTitleInput" placeholder="Note title…" maxlength="80" />
+      <button class="modal-close" onclick="closeNoteEditor()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <textarea class="note-body-input" id="noteBodyInput" placeholder="Start writing…"></textarea>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeNoteEditor()">Cancel</button>
+      <button class="btn-primary" onclick="saveNote()">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════
+     FOLDER NAME MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="folderModalOverlay">
+  <div class="modal folder-modal">
+    <h3 class="modal-title">New Folder</h3>
+    <input class="text-input" id="folderNameInput" placeholder="Folder name…" maxlength="40" />
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeFolderModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmCreateFolder()">Create</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+<script src="js/html-notes.js"></script>
+<script src="js/notes.js"></script>
+<script src="js/voice.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
