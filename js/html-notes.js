@@ -291,13 +291,14 @@ window.HtmlNotes = (() => {
   // ── FOLDER NAVIGATION ──────────────
   function enterFolder(folder) {
     folderStack.push({ id: folder.id, name: folder.name });
+    currentFolder = folder.id;
     render(folder.id);
   }
 
   function goToStackIndex(index) {
-    // index -1 = root
     folderStack.splice(index + 1);
-    const folderId = index < 0 ? null : folderStack[index]?.id;
+    const folderId = index < 0 ? null : folderStack[index]?.id ?? null;
+    currentFolder = folderId;
     render(folderId);
   }
 
@@ -310,7 +311,7 @@ window.HtmlNotes = (() => {
     const root = document.createElement('button');
     root.className = 'crumb' + (folderStack.length === 0 ? ' active' : '');
     root.textContent = 'All Files';
-    root.onclick = () => { folderStack.length = 0; render(null); };
+    root.onclick = () => { folderStack.length = 0; currentFolder = null; render(null); };
     bc.appendChild(root);
 
     folderStack.forEach((f, i) => {

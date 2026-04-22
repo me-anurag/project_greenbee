@@ -3,251 +3,199 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#2d5a27" />
+  <meta name="theme-color" content="#1a3318" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="GreenBee" />
-  <meta name="description" content="GreenBee – Your personal notes, voice memos, and HTML viewer" />
+  <meta name="description" content="GreenBee – Notes, HTML files, PDFs and Projects" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>GreenBee</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/main.css" />
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════
-     SIDE PANEL (drawer)
-══════════════════════════════════════════ -->
 <div class="overlay" id="overlay" onclick="closePanel()"></div>
 
+<!-- SIDE PANEL -->
 <nav class="side-panel" id="sidePanel" role="navigation" aria-label="Main navigation">
-  <div class="panel-header">
-    <div class="logo-mark">
-      <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-        <ellipse cx="20" cy="22" rx="13" ry="11" fill="#f5c842"/>
-        <ellipse cx="20" cy="22" rx="13" ry="11" fill="url(#beeBody)"/>
-        <rect x="10" y="19" width="20" height="4" rx="2" fill="#2d2d2d" opacity="0.35"/>
-        <rect x="11" y="24" width="18" height="3.5" rx="1.75" fill="#2d2d2d" opacity="0.25"/>
-        <ellipse cx="13" cy="14" rx="6" ry="4" fill="white" opacity="0.75" transform="rotate(-25 13 14)"/>
-        <ellipse cx="27" cy="14" rx="6" ry="4" fill="white" opacity="0.75" transform="rotate(25 27 14)"/>
-        <circle cx="17" cy="21" r="1.5" fill="#2d2d2d" opacity="0.6"/>
-        <circle cx="23" cy="21" r="1.5" fill="#2d2d2d" opacity="0.6"/>
+  <div class="panel-logo-area">
+    <div class="panel-bee-wrap">
+      <svg class="panel-bee-svg" width="44" height="44" viewBox="0 0 40 40" fill="none">
+        <ellipse cx="20" cy="14" rx="8" ry="7" fill="#f5c842"/>
+        <circle cx="17" cy="12" r="1.4" fill="#1a1a1a" opacity=".8"/>
+        <circle cx="23" cy="12" r="1.4" fill="#1a1a1a" opacity=".8"/>
+        <ellipse cx="12" cy="10" rx="5.5" ry="3.5" fill="white" opacity=".75" transform="rotate(-20 12 10)"/>
+        <ellipse cx="28" cy="10" rx="5.5" ry="3.5" fill="white" opacity=".75" transform="rotate(20 28 10)"/>
+        <ellipse cx="20" cy="26" rx="11" ry="9" fill="url(#pb)"/>
+        <rect x="11" y="23" width="18" height="3.5" rx="1.75" fill="#1a1a1a" opacity=".3"/>
+        <rect x="12" y="28" width="16" height="3" rx="1.5" fill="#1a1a1a" opacity=".2"/>
         <defs>
-          <linearGradient id="beeBody" x1="20" y1="11" x2="20" y2="33" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#f5c842"/>
-            <stop offset="100%" stop-color="#e8a800"/>
+          <linearGradient id="pb" x1="20" y1="17" x2="20" y2="35" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#f5c842"/><stop offset="100%" stop-color="#e8a800"/>
           </linearGradient>
         </defs>
       </svg>
+      <div class="panel-greeting-block">
+        <div class="panel-logo-text"><span class="logo-g">Green</span><span class="logo-b">Bee</span></div>
+        <div class="panel-greeting" id="panelGreeting">Good morning</div>
+      </div>
     </div>
-    <div class="logo-text">
-      <span class="logo-green">Green</span><span class="logo-bee">Bee</span>
-    </div>
-    <button class="panel-close" onclick="closePanel()" aria-label="Close menu">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <button class="panel-close" onclick="closePanel()" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
-
   <ul class="nav-list" role="list">
-    <li>
-      <button class="nav-item active" onclick="navigate('home')" data-view="home">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        </span>
-        <span class="nav-label">Home</span>
-      </button>
-    </li>
-    <li>
-      <button class="nav-item" onclick="navigate('html-notes')" data-view="html-notes">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        </span>
-        <span class="nav-label">HTML Files</span>
-        <span class="nav-badge" id="htmlCount">0</span>
-      </button>
-    </li>
-    <li>
-      <button class="nav-item" onclick="navigate('notes')" data-view="notes">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        </span>
-        <span class="nav-label">Notes</span>
-      </button>
-    </li>
-    <li>
-      <button class="nav-item" onclick="navigate('voice')" data-view="voice">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-        </span>
-        <span class="nav-label">Voice Notes</span>
-      </button>
-    </li>
-    <li>
-      <button class="nav-item" onclick="navigate('ai')" data-view="ai">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        </span>
-        <span class="nav-label">AI Tools</span>
-        <span class="nav-tag">Soon</span>
-      </button>
-    </li>
+    <li><button class="nav-item active" onclick="navigate('home')" data-view="home">
+      <svg class="ni" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
+    </button></li>
+    <li><button class="nav-item" onclick="navigate('html-notes')" data-view="html-notes">
+      <svg class="ni" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>HTML Files
+    </button></li>
+    <li><button class="nav-item" onclick="navigate('pdfs')" data-view="pdfs">
+      <svg class="ni" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>PDFs
+    </button></li>
+    <li><button class="nav-item" onclick="navigate('notes')" data-view="notes">
+      <svg class="ni" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Notes
+    </button></li>
+    <li><button class="nav-item" onclick="navigate('projects')" data-view="projects">
+      <svg class="ni" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Projects
+    </button></li>
+    <li><button class="nav-item" onclick="navigate('voice')" data-view="voice">
+      <svg class="ni" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>Voice
+    </button></li>
+    <li><button class="nav-item" onclick="navigate('ai')" data-view="ai">
+      <svg class="ni" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>AI Tools <span class="soon-tag">Soon</span>
+    </button></li>
   </ul>
-
-  <div class="panel-footer">
-    <div class="panel-section-title">Coming soon</div>
-    <div class="future-item">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-      Daily Quotes
-    </div>
-  </div>
+  <div class="panel-footer"><span class="panel-footer-text">✦ Daily Quotes coming soon</span></div>
 </nav>
 
-<!-- ══════════════════════════════════════════
-     MAIN APP
-══════════════════════════════════════════ -->
+<!-- APP SHELL -->
 <div class="app-shell" id="appShell">
 
-  <!-- TOP BAR -->
   <header class="topbar" id="topbar">
     <button class="hamburger" onclick="openPanel()" aria-label="Open menu">
       <span></span><span></span><span></span>
     </button>
     <div class="topbar-title" id="topbarTitle">
-      <span class="logo-green">Green</span><span class="logo-bee">Bee</span>
+      <span class="logo-g">Green</span><span class="logo-b">Bee</span>
     </div>
-    <div class="topbar-actions" id="topbarActions">
-      <!-- dynamic -->
-    </div>
+    <div id="topbarRight"></div>
   </header>
 
-  <!-- ────────────────────────────────
-       VIEW: HOME
-  ──────────────────────────────── -->
+  <!-- HOME -->
   <main class="view active" id="view-home">
-    <div class="home-hero">
-      <div class="hero-bee">
-        <svg width="64" height="64" viewBox="0 0 40 40" fill="none">
-          <ellipse cx="20" cy="22" rx="13" ry="11" fill="url(#beeBodyLg)"/>
-          <rect x="10" y="19" width="20" height="4" rx="2" fill="#2d2d2d" opacity="0.35"/>
-          <rect x="11" y="24" width="18" height="3.5" rx="1.75" fill="#2d2d2d" opacity="0.25"/>
-          <ellipse cx="13" cy="14" rx="6" ry="4" fill="white" opacity="0.8" transform="rotate(-25 13 14)"/>
-          <ellipse cx="27" cy="14" rx="6" ry="4" fill="white" opacity="0.8" transform="rotate(25 27 14)"/>
-          <circle cx="17" cy="21" r="1.5" fill="#2d2d2d" opacity="0.6"/>
-          <circle cx="23" cy="21" r="1.5" fill="#2d2d2d" opacity="0.6"/>
+    <div class="home-header-strip">
+      <div class="home-bee-anim">
+        <svg width="50" height="50" viewBox="0 0 40 40" fill="none">
+          <ellipse cx="20" cy="14" rx="8" ry="7" fill="#f5c842"/>
+          <circle cx="17" cy="12" r="1.4" fill="#1a1a1a" opacity=".8"/>
+          <circle cx="23" cy="12" r="1.4" fill="#1a1a1a" opacity=".8"/>
+          <ellipse cx="12" cy="10" rx="5.5" ry="3.5" fill="white" opacity=".78" transform="rotate(-20 12 10)"/>
+          <ellipse cx="28" cy="10" rx="5.5" ry="3.5" fill="white" opacity=".78" transform="rotate(20 28 10)"/>
+          <ellipse cx="20" cy="26" rx="11" ry="9" fill="url(#hb)"/>
+          <rect x="11" y="23" width="18" height="3.5" rx="1.75" fill="#1a1a1a" opacity=".3"/>
+          <rect x="12" y="28" width="16" height="3" rx="1.5" fill="#1a1a1a" opacity=".2"/>
           <defs>
-            <linearGradient id="beeBodyLg" x1="20" y1="11" x2="20" y2="33" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#f5c842"/>
-              <stop offset="100%" stop-color="#e8a800"/>
+            <linearGradient id="hb" x1="20" y1="17" x2="20" y2="35" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#f5c842"/><stop offset="100%" stop-color="#e8a800"/>
             </linearGradient>
           </defs>
         </svg>
       </div>
-      <h1 class="hero-greeting" id="heroGreeting">Good morning</h1>
-      <p class="hero-sub">Your hive of ideas</p>
-    </div>
-
-    <!-- Quick stats -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-num" id="statHtml">0</div>
-        <div class="stat-label">HTML Files</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="statNotes">0</div>
-        <div class="stat-label">Notes</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="statVoice">0</div>
-        <div class="stat-label">Voice Memos</div>
+      <div class="home-greeting-block">
+        <div class="home-greeting" id="homeGreeting">Good morning</div>
+        <div class="home-sub">Your hive of ideas</div>
       </div>
     </div>
 
-    <!-- HTML Files section on home -->
-    <section class="home-section">
-      <div class="section-header">
-        <h2 class="section-title">HTML Files</h2>
-        <button class="section-link" onclick="navigate('html-notes')">View all →</button>
-      </div>
-      <div class="html-grid" id="homeHtmlGrid">
-        <div class="empty-hint" id="homeHtmlEmpty">
-          <p>Drop your HTML notes here.<br/>Tap <strong>+</strong> to add files or folders.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- FAB -->
-    <button class="fab" id="homeFab" onclick="showHomeAddMenu()" aria-label="Add">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    </button>
-    <!-- FAB menu -->
-    <div class="fab-menu hidden" id="homeFabMenu">
-      <button class="fab-option" onclick="triggerHtmlUpload()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        Add HTML File
+    <div class="section-btns">
+      <button class="sec-btn" onclick="navigate('html-notes')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <span>HTML</span><span class="sec-count" id="scHtml">0</span>
       </button>
-      <button class="fab-option" onclick="createFolder()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-        New Folder
+      <button class="sec-btn" onclick="navigate('pdfs')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        <span>PDFs</span><span class="sec-count" id="scPdf">0</span>
+      </button>
+      <button class="sec-btn" onclick="navigate('notes')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Notes</span><span class="sec-count" id="scNotes">0</span>
       </button>
     </div>
-    <input type="file" id="htmlFileInput" accept=".html,.htm" multiple style="display:none" onchange="handleHtmlUpload(event)" />
+    <div class="section-btns" style="margin-top:2px">
+      <button class="sec-btn sec-btn-projects" onclick="navigate('projects')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>Projects</span><span class="sec-count" id="scProjects">0</span>
+      </button>
+    </div>
+
+    <div class="home-recent-label">Recent HTML Files</div>
+    <div class="html-grid" id="homeHtmlGrid">
+      <div class="empty-hint" id="homeHtmlEmpty">Add HTML files to see them here</div>
+    </div>
   </main>
 
-  <!-- ────────────────────────────────
-       VIEW: HTML FILES
-  ──────────────────────────────── -->
+  <!-- HTML FILES -->
   <main class="view" id="view-html-notes">
     <div class="view-toolbar">
-      <nav class="breadcrumb" id="breadcrumb" aria-label="Folder path">
-        <button class="crumb active" data-path="">All Files</button>
-      </nav>
-      <div class="toolbar-actions">
-        <button class="icon-btn" onclick="triggerHtmlUpload()" title="Add HTML file">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </button>
-        <button class="icon-btn" onclick="createFolder()" title="New folder">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-        </button>
-      </div>
+      <nav class="breadcrumb" id="breadcrumb" aria-label="path"></nav>
     </div>
     <div class="html-grid" id="htmlGrid">
       <div class="empty-state" id="htmlEmpty">
-        <div class="empty-icon">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        </div>
-        <p>No HTML files yet.<br/>Add your first file to get started.</p>
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <p>No HTML files yet</p>
         <button class="btn-primary" onclick="triggerHtmlUpload()">Add HTML File</button>
       </div>
     </div>
   </main>
 
-  <!-- ────────────────────────────────
-       VIEW: NOTES
-  ──────────────────────────────── -->
+  <!-- PDFs -->
+  <main class="view" id="view-pdfs">
+    <div class="html-grid" id="pdfGrid">
+      <div class="empty-state" id="pdfEmpty">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <p>No PDFs yet</p>
+        <button class="btn-primary" onclick="triggerPdfUpload()">Add PDF</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- NOTES -->
   <main class="view" id="view-notes">
     <div class="notes-list" id="notesList">
       <div class="empty-state" id="notesEmpty">
-        <div class="empty-icon">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        </div>
-        <p>No notes yet.<br/>Tap + to write your first note.</p>
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <p>No notes yet</p>
       </div>
     </div>
-    <button class="fab" onclick="openNoteEditor()" aria-label="New note">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    </button>
   </main>
 
-  <!-- ────────────────────────────────
-       VIEW: VOICE
-  ──────────────────────────────── -->
+  <!-- PROJECTS -->
+  <main class="view" id="view-projects">
+    <div class="space-window" id="spaceWindow">
+      <canvas class="space-canvas" id="spaceCanvas"></canvas>
+      <div class="space-overlay-content">
+        <div class="space-project-count"><span id="projectCount">0</span><span class="space-proj-label"> projects</span></div>
+        <div class="space-tagline">You have no limits</div>
+      </div>
+    </div>
+    <div class="projects-list" id="projectsList">
+      <div class="empty-state" id="projectsEmpty">
+        <p style="color:rgba(255,255,255,.5)">No projects yet.<br/>Tap <strong style="color:#a78bfa">+</strong> to add your first.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- VOICE -->
   <main class="view" id="view-voice">
     <div class="voice-center">
       <div class="voice-ring" id="voiceRing">
-        <button class="voice-btn" id="voiceRecordBtn" onclick="toggleRecording()" aria-label="Record voice note">
-          <svg id="voiceMicIcon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <button class="voice-btn" id="voiceRecordBtn" onclick="toggleRecording()" aria-label="Record">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
         </button>
       </div>
       <p class="voice-hint" id="voiceHint">Tap to record</p>
@@ -256,93 +204,88 @@
     <div class="voice-recordings" id="voiceRecordings"></div>
   </main>
 
-  <!-- ────────────────────────────────
-       VIEW: AI TOOLS
-  ──────────────────────────────── -->
+  <!-- AI -->
   <main class="view" id="view-ai">
     <div class="ai-hero">
-      <div class="ai-icon">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      </div>
-      <h2>AI Tools</h2>
-      <p>Powerful AI features are being built for you.</p>
+      <div class="ai-icon-wrap"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <h2>AI Tools</h2><p>Powerful features coming soon.</p>
     </div>
-    <div class="ai-tools-grid">
-      <button class="ai-tool-card" onclick="showComingSoon('Smart Summarize')">
-        <div class="ai-tool-icon">✦</div>
-        <div class="ai-tool-name">Smart Summarize</div>
-        <div class="ai-tool-desc">Summarise your HTML notes with AI</div>
-        <div class="coming-soon-badge">Coming Soon</div>
-      </button>
-      <button class="ai-tool-card" onclick="showComingSoon('Voice Transcribe')">
-        <div class="ai-tool-icon">◎</div>
-        <div class="ai-tool-name">Voice Transcribe</div>
-        <div class="ai-tool-desc">Turn voice memos into text</div>
-        <div class="coming-soon-badge">Coming Soon</div>
-      </button>
-      <button class="ai-tool-card" onclick="showComingSoon('Ask My Notes')">
-        <div class="ai-tool-icon">◈</div>
-        <div class="ai-tool-name">Ask My Notes</div>
-        <div class="ai-tool-desc">Chat with your knowledge base</div>
-        <div class="coming-soon-badge">Coming Soon</div>
-      </button>
-      <button class="ai-tool-card" onclick="showComingSoon('Daily Insights')">
-        <div class="ai-tool-icon">◇</div>
-        <div class="ai-tool-name">Daily Insights</div>
-        <div class="ai-tool-desc">AI-curated quotes &amp; ideas</div>
-        <div class="coming-soon-badge">Coming Soon</div>
-      </button>
+    <div class="ai-grid">
+      <button class="ai-card" onclick="showComingSoon('Smart Summarize')"><div class="ai-card-icon">✦</div><div class="ai-card-name">Smart Summarize</div><div class="ai-card-desc">Summarise notes with AI</div><span class="cs-badge">Soon</span></button>
+      <button class="ai-card" onclick="showComingSoon('Voice Transcribe')"><div class="ai-card-icon">◎</div><div class="ai-card-name">Voice Transcribe</div><div class="ai-card-desc">Turn voice into text</div><span class="cs-badge">Soon</span></button>
+      <button class="ai-card" onclick="showComingSoon('Ask My Notes')"><div class="ai-card-icon">◈</div><div class="ai-card-name">Ask My Notes</div><div class="ai-card-desc">Chat with your data</div><span class="cs-badge">Soon</span></button>
+      <button class="ai-card" onclick="showComingSoon('Daily Insights')"><div class="ai-card-icon">◇</div><div class="ai-card-name">Daily Insights</div><div class="ai-card-desc">Quotes &amp; ideas</div><span class="cs-badge">Soon</span></button>
     </div>
   </main>
 
-</div><!-- end app-shell -->
+</div><!-- /app-shell -->
 
-<!-- ══════════════════════════════════════════
-     HTML FILE VIEWER (full-screen overlay)
-══════════════════════════════════════════ -->
-<div class="html-viewer" id="htmlViewer" role="dialog" aria-modal="true" aria-label="HTML file viewer">
+<!-- GLOBAL FAB — always fixed, always visible -->
+<button class="fab" id="globalFab" onclick="fabTap()" aria-label="Add">
+  <svg id="fabIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+<div class="fab-menu hidden" id="fabMenu"></div>
+
+<!-- HTML VIEWER -->
+<div class="html-viewer" id="htmlViewer">
   <div class="viewer-bar">
-    <button class="viewer-close" onclick="closeViewer()" aria-label="Close viewer">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-      Back
-    </button>
+    <button class="viewer-close" onclick="closeViewer()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Back</button>
     <span class="viewer-title" id="viewerTitle"></span>
-    <button class="icon-btn" id="viewerDeleteBtn" title="Delete file">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-    </button>
+    <button class="icon-btn" id="viewerDeleteBtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg></button>
   </div>
   <iframe class="viewer-frame" id="viewerFrame" sandbox="allow-scripts allow-same-origin" title="HTML preview"></iframe>
 </div>
 
-<!-- ══════════════════════════════════════════
-     NOTE EDITOR MODAL
-══════════════════════════════════════════ -->
+<!-- PDF VIEWER -->
+<div class="html-viewer" id="pdfViewer">
+  <div class="viewer-bar">
+    <button class="viewer-close" onclick="closePdfViewer()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Back</button>
+    <span class="viewer-title" id="pdfViewerTitle"></span>
+    <button class="icon-btn" id="pdfDeleteBtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg></button>
+  </div>
+  <iframe class="viewer-frame" id="pdfFrame" title="PDF preview"></iframe>
+</div>
+
+<!-- NOTE EDITOR -->
 <div class="modal-overlay hidden" id="noteEditorOverlay">
-  <div class="modal note-editor-modal">
+  <div class="modal">
     <div class="modal-header">
-      <input class="note-title-input" id="noteTitleInput" placeholder="Note title…" maxlength="80" />
-      <button class="modal-close" onclick="closeNoteEditor()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <input class="note-title-input" id="noteTitleInput" placeholder="Note title…" maxlength="80"/>
+      <button class="modal-close" onclick="closeNoteEditor()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <textarea class="note-body-input" id="noteBodyInput" placeholder="Start writing…"></textarea>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeNoteEditor()">Cancel</button>
-      <button class="btn-primary" onclick="saveNote()">Save Note</button>
+      <button class="btn-primary" onclick="saveNote()">Save</button>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
-<div class="toast" id="toast"></div>
+<!-- PROJECT EDITOR -->
+<div class="modal-overlay hidden" id="projectEditorOverlay">
+  <div class="modal proj-modal">
+    <div class="modal-header">
+      <input class="note-title-input" id="projNameInput" placeholder="Project name…" maxlength="80"/>
+      <button class="modal-close" onclick="closeProjectEditor()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="proj-form">
+      <input class="text-input" id="projUrlInput" placeholder="Live URL (https://…)" type="url"/>
+      <input class="text-input" id="projRepoInput" placeholder="Repo / GitHub URL (optional)"/>
+      <input class="text-input" id="projTagsInput" placeholder="Tags: React, API, Design…"/>
+      <textarea class="text-input proj-desc-input" id="projDescInput" placeholder="Notes, docs, ideas…" rows="4"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeProjectEditor()">Cancel</button>
+      <button class="btn-primary" onclick="saveProject()">Save Project</button>
+    </div>
+  </div>
+</div>
 
-<!-- ══════════════════════════════════════════
-     FOLDER NAME MODAL
-══════════════════════════════════════════ -->
+<!-- FOLDER MODAL -->
 <div class="modal-overlay hidden" id="folderModalOverlay">
   <div class="modal folder-modal">
-    <h3 class="modal-title">New Folder</h3>
-    <input class="text-input" id="folderNameInput" placeholder="Folder name…" maxlength="40" />
+    <div class="modal-title-block">New Folder</div>
+    <input class="text-input" id="folderNameInput" placeholder="Folder name…" maxlength="40"/>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeFolderModal()">Cancel</button>
       <button class="btn-primary" onclick="confirmCreateFolder()">Create</button>
@@ -350,16 +293,20 @@
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+<input type="file" id="htmlFileInput" accept=".html,.htm" multiple style="display:none" onchange="handleHtmlUpload(event)"/>
+<input type="file" id="pdfFileInput" accept=".pdf" multiple style="display:none" onchange="handlePdfUpload(event)"/>
+
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
 <script src="js/html-notes.js"></script>
 <script src="js/notes.js"></script>
 <script src="js/voice.js"></script>
+<script src="js/pdfs.js"></script>
+<script src="js/projects.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
-    });
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
   }
 </script>
 </body>

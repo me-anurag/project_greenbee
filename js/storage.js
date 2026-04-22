@@ -4,7 +4,7 @@
 ══════════════════════════════════════ */
 
 const DB_NAME    = 'greenbee';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let _db = null;
 
@@ -28,6 +28,12 @@ function openDB() {
       }
       if (!db.objectStoreNames.contains('voice_notes')) {
         db.createObjectStore('voice_notes', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('pdfs')) {
+        db.createObjectStore('pdfs', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('projects')) {
+        db.createObjectStore('projects', { keyPath: 'id' });
       }
     };
 
@@ -206,5 +212,29 @@ window.Storage = {
 
   async deleteVoiceNote(id) {
     return idbDelete('voice_notes', id);
-  }
+  },
+
+  // PDFs
+  async addPdf({ name, data, size }) {
+    const item = { id: uid(), name, data, size, createdAt: Date.now() };
+    await idbPut('pdfs', item); return item;
+  },
+  async getPdfs() {
+    const all = await idbGetAll('pdfs');
+    return all.sort((a,b) => b.createdAt - a.createdAt);
+  },
+  async getPdf(id) { return idbGet('pdfs', id); },
+  async deletePdf(id) { return idbDelete('pdfs', id); },
+
+  // Projects
+  async saveProject({ id, name, url, repo, tags, description }) {
+    const item = { id: id || uid(), name, url, repo, tags, description, updatedAt: Date.now() };
+    await idbPut('projects', item); return item;
+  },
+  async getProjects() {
+    const all = await idbGetAll('projects');
+    return all.sort((a,b) => b.updatedAt - a.updatedAt);
+  },
+  async deleteProject(id) { return idbDelete('projects', id); }
+
 };
