@@ -87,9 +87,12 @@ function navigate(view, pushHistory = true) {
 }
 
 function updateTopbar(view) {
-  const titleEl  = document.getElementById('topbarTitle');
-  const rightEl  = document.getElementById('topbarRight');
+  const titleEl   = document.getElementById('topbarTitle');
+  const rightEl   = document.getElementById('topbarRight');
   const hamburger = document.querySelector('.hamburger');
+
+  // Always remove any existing back button first
+  document.querySelectorAll('.topbar-back-btn').forEach(b => b.remove());
 
   if (view === 'home') {
     titleEl.innerHTML = viewTitles.home;
@@ -98,14 +101,12 @@ function updateTopbar(view) {
   } else {
     titleEl.textContent = viewTitles[view] || view;
     hamburger.style.display = '';
-    // Back button — always goes to home from a section
     rightEl.innerHTML = '';
     const backBtn = document.createElement('button');
     backBtn.className = 'topbar-back-btn';
     backBtn.setAttribute('aria-label', 'Back to Home');
     backBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Home`;
     backBtn.onclick = () => navigateBack();
-    // Prepend before title
     titleEl.parentElement.insertBefore(backBtn, titleEl);
   }
 }
