@@ -337,5 +337,13 @@ window.HtmlNotes = (() => {
     return d.toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
   }
 
-  return { render, buildFileCard, buildFolderCard, get currentFolder() { return currentFolder; } };
+  return { render, buildFileCard, buildFolderCard,
+    get currentFolder() { return currentFolder; },
+    goUp() {
+      if (folderStack.length === 0) return;
+      folderStack.pop();
+      currentFolder = folderStack.length > 0 ? folderStack[folderStack.length-1].id : null;
+      render(currentFolder);
+    }
+  };
 })();

@@ -4,7 +4,7 @@
    network-first for fonts/external
 ══════════════════════════════════════ */
 
-const CACHE   = 'greenbee-v3';
+const CACHE   = 'greenbee-v4';
 const SHELL = [
   '/',
   '/index.html',
