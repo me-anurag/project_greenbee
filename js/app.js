@@ -299,8 +299,15 @@ function showContextMenu(e, items) {
 }
 
 // ── INIT ───────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   updateGreeting();
   history.replaceState({ view:'home' }, '', '#home');
   navigate('home', false);
+
+  // Start Firebase sync in background — doesn't block the UI
+  if (window.FirebaseSync) {
+    FirebaseSync.init().then(ok => {
+      if (ok) showToast('☁️ Cloud sync active');
+    }).catch(() => {});
+  }
 });
