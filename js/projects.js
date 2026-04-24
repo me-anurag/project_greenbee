@@ -1,462 +1,467 @@
-/* ══════════════════════════════════════════════════════
-   GreenBee — Projects + Space Scenes
-   3 swipeable canvas scenes:
-     0 — Deep Space (stars + shooting stars)
-     1 — Nebula (colourful gas clouds + star clusters)
-     2 — Solar System (orbiting planets)
+/* ═══════════════════════════════════════════════════
+   GreenBee — Space Scenes (mathematically correct)
+   Scene 0: Deep Space  — stars + shooting stars
+   Scene 1: Nebula      — gas clouds + star cluster
+   Scene 2: Solar System — sun + 5 planets on correct
+            elliptical orbits with proper tilt
 
-   BUGS FIXED vs v1:
-   - setInterval leak: only ONE interval ever created, cleared on stop
-   - Multiple RAF loops: guard flag prevents stacking
-   - Meteor angle from right side was π+π/4 = 225° (up-left). Fixed to ~315° (down-left)
-   - Meteor trail drawn FROM current pos before move — now draws correct direction
-   - Unused `t` variable removed
-   - resize() recreates stars & objects cleanly
-   - stop() cancels RAF + interval
-══════════════════════════════════════════════════════ */
+   ACCURACY NOTES:
+   - Planets orbit on a tilted ellipse (perspective view
+     of a flat orbital plane seen at ~30° inclination).
+     orbitRx = full radius, orbitRy = orbitRx * sin(tilt)
+   - Meteor angles: all spawn off-screen, travel across.
+     Angle always points INTO the canvas, never away.
+   - Tail is drawn from head backwards along -velocity.
+   - RAF loop has single entry guard.
+   - setInterval created once, cleared on stop().
+   - ResizeObserver rebuilds scene geometry on resize.
+═══════════════════════════════════════════════════ */
 
 window.SpaceScenes = (() => {
-  let canvas, ctx, W, H;
+  let canvas, ctx;
+  let W = 0, H = 0;           // canvas pixels (pre-DPR)
+  let DPR = 1;
   let raf = null;
-  let spawnInterval = null;
-  let currentScene = 0;
-  const SCENES = 3;
-  // Per-scene state
-  let scenes = {};
+  let spawnTimer = null;
+  let scene = 0;
+  const TOTAL = 3;
+  let S = {};                  // scene state object
 
-  // ── Swipe state ──────────────────────
-  let touchStartX = 0, touchStartY = 0, isSwiping = false;
-
-  // ── Init ─────────────────────────────
+  // ── INIT ─────────────────────────────
   function init() {
     canvas = document.getElementById('spaceCanvas');
-    if (!canvas) return;
+    if (!canvas || canvas._gbInit) return;
+    canvas._gbInit = true;
     ctx = canvas.getContext('2d');
-
     resize();
     new ResizeObserver(resize).observe(canvas.parentElement);
-
-    // Touch swipe
-    canvas.addEventListener('touchstart', onTouchStart, { passive:true });
-    canvas.addEventListener('touchend',   onTouchEnd,   { passive:true });
-
-    // Dots indicator click
-    document.querySelectorAll('.scene-dot').forEach((dot, i) => {
-      dot.addEventListener('click', () => switchScene(i));
-    });
-
-    startLoop();
-    startSpawn();
+    canvas.addEventListener('touchstart', onTS, { passive: true });
+    canvas.addEventListener('touchend',   onTE, { passive: true });
+    document.querySelectorAll('.scene-dot').forEach((d, i) =>
+      d.addEventListener('click', () => switchScene(i))
+    );
+    if (!raf) loop();
+    if (!spawnTimer) spawnTimer = setInterval(tick, 1400);
     updateDots();
   }
 
   function resize() {
     if (!canvas) return;
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
     const rect = canvas.parentElement.getBoundingClientRect();
-    const dpr  = Math.min(devicePixelRatio, 2); // cap at 2x for perf
-    W = canvas.width  = rect.width  * dpr;
-    H = canvas.height = rect.height * dpr;
-    canvas.style.width  = rect.width  + 'px';
-    canvas.style.height = rect.height + 'px';
-    buildScene(currentScene);
+    W = rect.width;
+    H = rect.height;
+    canvas.width  = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    buildScene(scene);
   }
 
-  // ── Scene builder ─────────────────────
+  // ── SCENE BUILDERS ───────────────────
   function buildScene(i) {
-    if (i === 0) buildDeepSpace();
-    if (i === 1) buildNebula();
-    if (i === 2) buildSolar();
+    S = {};
+    if (i === 0) S = buildDeepSpace();
+    if (i === 1) S = buildNebula();
+    if (i === 2) S = buildSolar();
   }
 
-  // Scene 0: Deep Space
   function buildDeepSpace() {
-    const dpr = Math.min(devicePixelRatio, 2);
-    scenes[0] = {
-      stars: Array.from({ length: 140 }, () => ({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        r: (Math.random() * 1.2 + 0.3) * dpr,
-        base: Math.random() * 0.6 + 0.2,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.008 + Math.random() * 0.018,
-        hue: pickRand([null, null, null, 210, 45, 280]),
+    return {
+      stars: Array.from({ length: 150 }, () => ({
+        x: rand(0, W), y: rand(0, H),
+        r: rand(0.3, 1.6),
+        base: rand(0.15, 0.75),
+        phase: rand(0, TAU),
+        freq:  rand(0.5, 1.8),    // twinkle Hz
+        hue:   pick([null,null,null,null,210,220,45,280]),
       })),
       meteors: [],
     };
   }
 
-  // Scene 1: Nebula
   function buildNebula() {
-    const dpr = Math.min(devicePixelRatio, 2);
-    scenes[1] = {
-      stars: Array.from({ length: 200 }, () => ({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        r: (Math.random() * 0.9 + 0.2) * dpr,
-        base: Math.random() * 0.8 + 0.1,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.005 + Math.random() * 0.015,
-        hue: pickRand([null, 200, 260, 320, 45]),
-        sat: 40 + Math.random() * 50,
+    // Nebula blobs are static gradients — positions computed once
+    const blobs = [
+      { x:W*0.22, y:H*0.28, r:W*0.48, h:270, a:0.055 },
+      { x:W*0.78, y:H*0.65, r:W*0.38, h:200, a:0.048 },
+      { x:W*0.50, y:H*0.85, r:W*0.40, h:320, a:0.040 },
+      { x:W*0.08, y:H*0.70, r:W*0.32, h:150, a:0.032 },
+    ];
+    return {
+      blobs,
+      stars: Array.from({ length: 220 }, () => ({
+        x: rand(0, W), y: rand(0, H),
+        r: rand(0.2, 1.1),
+        base: rand(0.1, 0.85),
+        phase: rand(0, TAU),
+        freq:  rand(0.3, 1.5),
+        hue:   pick([null,200,210,260,280,320]),
+        sat:   rand(30, 70),
       })),
-      // Static nebula blobs — pre-computed positions so no per-frame calc
-      blobs: [
-        { x:W*0.2, y:H*0.3, r:W*0.45, c:'rgba(120,40,220,', a:0.055 },
-        { x:W*0.75, y:H*0.6, r:W*0.4, c:'rgba(20,100,200,', a:0.05  },
-        { x:W*0.5, y:H*0.8, r:W*0.35, c:'rgba(200,40,120,', a:0.04  },
-        { x:W*0.1, y:H*0.7, r:W*0.3,  c:'rgba(20,160,100,', a:0.035 },
-      ],
-      // Drifting dust particles
-      dust: Array.from({ length: 60 }, () => ({
-        x: Math.random() * W, y: Math.random() * H,
-        vx: (Math.random() - 0.5) * 0.12,
-        vy: (Math.random() - 0.5) * 0.12,
-        r: (Math.random() * 2 + 0.5) * dpr,
-        hue: pickRand([260, 320, 200]),
-        o: Math.random() * 0.4 + 0.1,
+      // Cluster center
+      clusterX: W * 0.72, clusterY: H * 0.32,
+      clusterStars: Array.from({ length: 24 }, (_, i) => ({
+        angle: (i / 24) * TAU,
+        orbitR: rand(12, 60),
+        phase: rand(0, TAU),
+        r: rand(0.6, 1.8),
+        hue: 200 + i * 5,
       })),
     };
   }
 
-  // Scene 2: Solar System
   function buildSolar() {
-    const dpr = Math.min(devicePixelRatio, 2);
-    const cx = W * 0.35, cy = H * 0.48;
-    const sunR = Math.min(W, H) * 0.085;
-    scenes[2] = {
-      cx, cy, sunR,
-      stars: Array.from({ length: 80 }, () => ({
-        x: Math.random() * W, y: Math.random() * H,
-        r: (Math.random() * 0.7 + 0.2) * dpr,
-        o: Math.random() * 0.4 + 0.1,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.006 + Math.random() * 0.01,
+    const cx   = W * 0.42;
+    const cy   = H * 0.50;
+    const sunR = clamp(Math.min(W, H) * 0.082, 10, 40);
+    const TILT = Math.sin(toRad(28)); // orbital plane tilt factor
+
+    const planets = [
+      // { name, orbitRx, speed deg/frame, r, color, angle0, hasRings, moon }
+      // Speeds loosely scaled to real relative periods (Mercury fastest)
+      { name:'Mercury', orbitRx:sunR*2.2,  speed:0.030, r:sunR*0.17, color:'#aab8d0', angle:0.40 },
+      { name:'Venus',   orbitRx:sunR*3.2,  speed:0.020, r:sunR*0.26, color:'#e8c97a', angle:1.20 },
+      { name:'Earth',   orbitRx:sunR*4.4,  speed:0.014, r:sunR*0.28, color:'#5b9bd5', angle:2.10,
+        moon:{ orbitRx:sunR*0.56, speed:0.065, r:sunR*0.10, color:'#cccccc', angle:0 } },
+      { name:'Mars',    orbitRx:sunR*5.9,  speed:0.009, r:sunR*0.22, color:'#d96a4a', angle:3.80 },
+      { name:'Jupiter', orbitRx:sunR*8.2,  speed:0.004, r:sunR*0.45, color:'#c9a96e', angle:0.90, hasRings:true },
+    ].map(p => ({ ...p, orbitRy: p.orbitRx * TILT, angle: p.angle }));
+
+    return {
+      cx, cy, sunR, TILT,
+      planets,
+      bgStars: Array.from({ length: 90 }, () => ({
+        x: rand(0,W), y: rand(0,H),
+        r: rand(0.2, 0.9),
+        o: rand(0.08, 0.45),
+        phase: rand(0, TAU), freq: rand(0.3, 1.0),
       })),
-      planets: [
-        // { orbitR, speed (rad/frame), r (radius), color, startAngle, moons }
-        { orbitR: sunR*2.1, speed:0.028, r:sunR*0.18, color:'#b0c4ff', angle: 0.5,   label:'Mercury' },
-        { orbitR: sunR*3.1, speed:0.018, r:sunR*0.28, color:'#e8c97a', angle: 1.2,   label:'Venus'   },
-        { orbitR: sunR*4.3, speed:0.012, r:sunR*0.30, color:'#6ab3f5', angle: 2.1,   label:'Earth',
-          moon: { orbitR: sunR*0.55, speed:0.06, r:sunR*0.10, color:'#cccccc', angle:0 } },
-        { orbitR: sunR*5.8, speed:0.008, r:sunR*0.26, color:'#e07a5f', angle: 3.8,   label:'Mars'    },
-        { orbitR: sunR*8.0, speed:0.004, r:sunR*0.48, color:'#d4a96a', angle: 0.9,   label:'Jupiter',
-          rings: true },
-      ],
-      sunGlow: 0,
+      sunPulse: 0,
     };
   }
 
-  // ── Draw loop ─────────────────────────
-  function startLoop() {
-    if (raf) return; // prevent stacking
-    loop();
-  }
-
+  // ── DRAW LOOP ────────────────────────
   function loop() {
     raf = requestAnimationFrame(loop);
-    const t = Date.now() * 0.001;
-    if (currentScene === 0) drawDeepSpace(t);
-    if (currentScene === 1) drawNebula(t);
-    if (currentScene === 2) drawSolar(t);
+    const t = performance.now() * 0.001;   // seconds
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    if (scene === 0) drawDeepSpace(t);
+    if (scene === 1) drawNebula(t);
+    if (scene === 2) drawSolar(t);
   }
 
-  // ── Scene 0: Deep Space ───────────────
+  // ── SCENE 0: DEEP SPACE ──────────────
   function drawDeepSpace(t) {
-    const s = scenes[0]; if (!s) return;
-    ctx.fillStyle = '#030712'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#030712';
+    ctx.fillRect(0, 0, W, H);
+    radialGlow(W*0.65, H*0.25, W*0.55, 'rgba(60,20,140,0.06)');
+    radialGlow(W*0.10, H*0.80, W*0.38, 'rgba(8,55,35,0.05)');
 
-    // Subtle nebula hint
-    drawRadialGlow(W*0.65, H*0.25, W*0.6, 'rgba(60,20,140,0.06)');
-    drawRadialGlow(W*0.1,  H*0.8,  W*0.4, 'rgba(10,70,40,0.05)');
-
-    // Stars
-    s.stars.forEach(st => {
-      const alpha = st.base * (0.65 + 0.35 * Math.sin(st.phase + t * st.speed * 6.28));
+    S.stars.forEach(s => {
+      const a = s.base * (0.65 + 0.35 * Math.sin(s.phase + t * s.freq * TAU));
       ctx.beginPath();
-      ctx.arc(st.x, st.y, st.r, 0, Math.PI*2);
-      ctx.fillStyle = st.hue != null
-        ? `hsla(${st.hue},60%,90%,${alpha})`
-        : `rgba(255,255,255,${alpha})`;
+      ctx.arc(s.x, s.y, s.r, 0, TAU);
+      ctx.fillStyle = s.hue != null
+        ? `hsla(${s.hue},55%,88%,${a})` : `rgba(255,255,255,${a})`;
       ctx.fill();
     });
 
-    // Meteors — draw trail BEHIND head (tail goes opposite to direction)
-    s.meteors = s.meteors.filter(m => m.life > 0);
-    s.meteors.forEach(m => {
-      const dpr = Math.min(devicePixelRatio, 2);
-      // Tail end is behind the meteor (opposite to velocity direction)
-      const tailX = m.x - Math.cos(m.angle) * m.length * m.life;
-      const tailY = m.y - Math.sin(m.angle) * m.length * m.life;
+    // Meteors
+    S.meteors = S.meteors.filter(m => m.life > 0);
+    S.meteors.forEach(m => {
+      // Tail starts at head, extends BACKWARDS (opposite velocity direction)
+      const tailLen = m.len * m.life;
+      const tx = m.x - Math.cos(m.ang) * tailLen;
+      const ty = m.y - Math.sin(m.ang) * tailLen;
 
-      const mg = ctx.createLinearGradient(m.x, m.y, tailX, tailY);
-      const col = m.hue ? `hsla(${m.hue},80%,85%,` : 'rgba(255,255,255,';
-      mg.addColorStop(0,   col + (m.life * 0.95) + ')');
-      mg.addColorStop(0.4, col + (m.life * 0.3)  + ')');
-      mg.addColorStop(1,   col + '0)');
-
-      ctx.strokeStyle = mg;
-      ctx.lineWidth   = 2 * dpr * m.life;
-      ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tailX, tailY); ctx.stroke();
+      const g = ctx.createLinearGradient(m.x, m.y, tx, ty);
+      const c = m.purple ? 'hsla(265,75%,82%,' : 'rgba(255,255,255,';
+      g.addColorStop(0,   c + (m.life * 0.92) + ')');
+      g.addColorStop(0.35,c + (m.life * 0.30) + ')');
+      g.addColorStop(1,   c + '0)');
+      ctx.strokeStyle = g;
+      ctx.lineWidth   = 2.2 * m.life;
+      ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
 
       // Head glow
-      const glow = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, 4*dpr*m.life);
-      glow.addColorStop(0, col + m.life + ')');
-      glow.addColorStop(1, col + '0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath(); ctx.arc(m.x, m.y, 4*dpr*m.life, 0, Math.PI*2); ctx.fill();
+      const hg = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, 5 * m.life);
+      hg.addColorStop(0, c + (m.life * 0.9) + ')');
+      hg.addColorStop(1, c + '0)');
+      ctx.fillStyle = hg;
+      ctx.beginPath(); ctx.arc(m.x, m.y, 5 * m.life, 0, TAU); ctx.fill();
 
-      // Move meteor forward
-      m.x += Math.cos(m.angle) * m.speed;
-      m.y += Math.sin(m.angle) * m.speed;
+      // Advance position
+      m.x    += Math.cos(m.ang) * m.spd;
+      m.y    += Math.sin(m.ang) * m.spd;
       m.life -= m.decay;
     });
   }
 
+  // Spawn a meteor that enters from off-screen and travels ACROSS
   function spawnMeteor() {
-    const s = scenes[0]; if (!s) return;
-    if (s.meteors.length >= 5) return;
-    const dpr = Math.min(devicePixelRatio, 2);
-    const fromTop   = Math.random() < 0.6;
-    let sx, sy, angle;
+    if (!S.meteors || S.meteors.length >= 4) return;
+
+    // Pick entry edge (top or right) and a valid trajectory angle
+    // All angles are in [0, π] range (downward) or near-right
+    let x, y, ang;
+    const fromTop = Math.random() < 0.55;
     if (fromTop) {
-      // Spawn from top edge, travel downward-right or downward-left
-      sx    = Math.random() * W;
-      sy    = -10;
-      // Angles: 30°–70° (top-right path) or 110°–150° (top-left path)
-      angle = (Math.random() < 0.6)
-        ? toRad(30 + Math.random() * 40)   // down-right
-        : toRad(110 + Math.random() * 40);  // down-left
+      // Enter from top edge somewhere across the width
+      x   = rand(W * 0.05, W * 0.90);
+      y   = -8;
+      // Travel downward: angle in 25°–80° (right-leaning) or 100°–155° (left-leaning)
+      ang = Math.random() < 0.6
+        ? toRad(rand(25, 78))    // down-right
+        : toRad(rand(102, 155)); // down-left
     } else {
-      // Spawn from right edge, travel leftward
-      sx    = W + 10;
-      sy    = Math.random() * H * 0.6;
-      angle = toRad(195 + Math.random() * 30); // 195°–225° = down-left
+      // Enter from right edge
+      x   = W + 8;
+      y   = rand(H * 0.02, H * 0.65);
+      // Travel leftward-downward: angle 195°–240° (pointing into canvas)
+      ang = toRad(rand(198, 238));
     }
-    s.meteors.push({
-      x: sx, y: sy, angle, life: 1,
-      speed:  (2.5 + Math.random() * 4) * dpr,
-      length: (50 + Math.random() * 100) * dpr,
-      decay:  0.01 + Math.random() * 0.012,
-      hue:    Math.random() < 0.35 ? 260 : null,
+
+    S.meteors.push({
+      x, y, ang,
+      spd:   rand(2.0, 5.5),
+      len:   rand(55, 130),
+      life:  1.0,
+      decay: rand(0.010, 0.016),
+      purple: Math.random() < 0.38,
     });
   }
 
-  // ── Scene 1: Nebula ───────────────────
+  // ── SCENE 1: NEBULA ──────────────────
   function drawNebula(t) {
-    const s = scenes[1]; if (!s) return;
-    ctx.fillStyle = '#04040f'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#040410';
+    ctx.fillRect(0, 0, W, H);
 
     // Static nebula blobs
-    s.blobs.forEach(b => drawRadialGlow(b.x, b.y, b.r, b.c + b.a + ')'));
+    S.blobs.forEach(b => radialGlow(b.x, b.y, b.r, `hsla(${b.h},70%,50%,${b.a})`));
 
-    // Dust particles drift
-    s.dust.forEach(d => {
-      d.x += d.vx; d.y += d.vy;
-      if (d.x < 0) d.x = W; if (d.x > W) d.x = 0;
-      if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
+    // Stars with gentle twinkling
+    S.stars.forEach(s => {
+      const a = s.base * (0.55 + 0.45 * Math.sin(s.phase + t * s.freq * TAU));
       ctx.beginPath();
-      ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
-      ctx.fillStyle = `hsla(${d.hue},70%,80%,${d.o})`;
+      ctx.arc(s.x, s.y, s.r, 0, TAU);
+      ctx.fillStyle = s.hue
+        ? `hsla(${s.hue},${s.sat}%,88%,${a})`
+        : `rgba(255,255,255,${a})`;
       ctx.fill();
     });
 
-    // Stars (more colorful)
-    s.stars.forEach(st => {
-      const alpha = st.base * (0.6 + 0.4 * Math.sin(st.phase + t * st.speed * 6.28));
+    // Rotating star cluster (slow drift)
+    const cx = S.clusterX, cy = S.clusterY;
+    const drift = t * 0.018; // very slow rotation in radians
+    S.clusterStars.forEach(s => {
+      const a  = s.angle + drift;
+      const px = cx + Math.cos(a) * s.orbitR;
+      const py = cy + Math.sin(a) * s.orbitR * 0.55; // flattened
+      const brightness = 0.35 + 0.55 * Math.abs(Math.sin(s.phase + t * 0.9));
       ctx.beginPath();
-      ctx.arc(st.x, st.y, st.r, 0, Math.PI*2);
-      ctx.fillStyle = st.hue
-        ? `hsla(${st.hue},${st.sat}%,90%,${alpha})`
-        : `rgba(255,255,255,${alpha})`;
+      ctx.arc(px, py, s.r, 0, TAU);
+      ctx.fillStyle = `hsla(${s.hue},65%,86%,${brightness})`;
       ctx.fill();
     });
 
-    // Bright cluster in center-right
-    const cx = W*0.7, cy = H*0.35;
-    for (let i = 0; i < 18; i++) {
-      const a  = (i / 18) * Math.PI * 2 + t * 0.03;
-      const r  = (20 + i * 4) * Math.min(devicePixelRatio,2);
-      const px = cx + Math.cos(a) * r * 0.6;
-      const py = cy + Math.sin(a) * r * 0.4;
-      const brightness = 0.3 + 0.5 * Math.sin(t * 1.2 + i);
-      ctx.beginPath();
-      ctx.arc(px, py, (0.8 + i%3*0.4) * Math.min(devicePixelRatio,2), 0, Math.PI*2);
-      ctx.fillStyle = `hsla(${200 + i*8},70%,85%,${brightness})`;
-      ctx.fill();
-    }
+    // Central cluster glow
+    radialGlow(cx, cy, 30, `rgba(180,160,255,0.18)`);
   }
 
-  // ── Scene 2: Solar System ─────────────
+  // ── SCENE 2: SOLAR SYSTEM ────────────
   function drawSolar(t) {
-    const s = scenes[2]; if (!s) return;
-    const { cx, cy, sunR } = s;
-    const dpr = Math.min(devicePixelRatio, 2);
+    ctx.fillStyle = '#010008';
+    ctx.fillRect(0, 0, W, H);
+    radialGlow(W*0.85, H*0.12, W*0.40, 'rgba(30,10,80,0.07)');
 
-    ctx.fillStyle = '#010008'; ctx.fillRect(0, 0, W, H);
-    drawRadialGlow(W*0.85, H*0.15, W*0.35, 'rgba(30,10,80,0.07)');
+    const { cx, cy, sunR, planets } = S;
 
     // Background stars
-    s.stars.forEach(st => {
-      const alpha = st.o * (0.7 + 0.3 * Math.sin(st.phase + t * st.speed * 6));
-      ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(255,255,255,${alpha})`; ctx.fill();
+    S.bgStars.forEach(s => {
+      const a = s.o * (0.7 + 0.3 * Math.sin(s.phase + t * s.freq * TAU));
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, TAU);
+      ctx.fillStyle = `rgba(255,255,255,${a})`; ctx.fill();
     });
 
-    // Orbit rings
-    s.planets.forEach(p => {
+    // Orbit ellipses (perspective: planet's flat orbit at ~28° inclination)
+    planets.forEach(p => {
       ctx.beginPath();
-      ctx.ellipse(cx, cy, p.orbitR, p.orbitR * 0.35, 0, 0, Math.PI*2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-      ctx.lineWidth = dpr;
+      ctx.ellipse(cx, cy, p.orbitRx, p.orbitRy, 0, 0, TAU);
+      ctx.strokeStyle = 'rgba(255,255,255,0.055)';
+      ctx.lineWidth = 1;
       ctx.stroke();
     });
 
-    // Sun
-    s.sunGlow = (s.sunGlow || 0) + 0.03;
-    const pulse = 1 + 0.04 * Math.sin(s.sunGlow);
-    const sunGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, sunR * 2.5 * pulse);
-    sunGrad.addColorStop(0,   'rgba(255,240,180,0.9)');
-    sunGrad.addColorStop(0.3, 'rgba(255,160,20,0.6)');
-    sunGrad.addColorStop(0.7, 'rgba(255,80,0,0.15)');
-    sunGrad.addColorStop(1,   'transparent');
-    ctx.fillStyle = sunGrad;
-    ctx.beginPath(); ctx.arc(cx, cy, sunR * 2.5 * pulse, 0, Math.PI*2); ctx.fill();
+    // Sun — pulsing core
+    S.sunPulse = (S.sunPulse || 0) + 0.028;
+    const pulse = 1 + 0.038 * Math.sin(S.sunPulse);
+
+    // Sun outer corona
+    const corona = ctx.createRadialGradient(cx, cy, 0, cx, cy, sunR * 3.2 * pulse);
+    corona.addColorStop(0,   'rgba(255,220,120,0.22)');
+    corona.addColorStop(0.35,'rgba(255,140,20,0.10)');
+    corona.addColorStop(0.7, 'rgba(255,60,0,0.04)');
+    corona.addColorStop(1,   'transparent');
+    ctx.fillStyle = corona;
+    ctx.beginPath(); ctx.arc(cx, cy, sunR * 3.2 * pulse, 0, TAU); ctx.fill();
 
     // Sun core
-    const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, sunR);
-    coreGrad.addColorStop(0,   '#fffde0');
-    coreGrad.addColorStop(0.5, '#ffcc00');
-    coreGrad.addColorStop(1,   '#ff8800');
-    ctx.fillStyle = coreGrad;
-    ctx.beginPath(); ctx.arc(cx, cy, sunR * pulse, 0, Math.PI*2); ctx.fill();
+    const core = ctx.createRadialGradient(cx-sunR*0.28, cy-sunR*0.28, 0, cx, cy, sunR * pulse);
+    core.addColorStop(0,   '#fffde8');
+    core.addColorStop(0.45,'#ffd020');
+    core.addColorStop(1,   '#ff7800');
+    ctx.fillStyle = core;
+    ctx.beginPath(); ctx.arc(cx, cy, sunR * pulse, 0, TAU); ctx.fill();
 
-    // Planets
-    s.planets.forEach(p => {
-      p.angle += p.speed;
-      const px = cx + Math.cos(p.angle) * p.orbitR;
-      const py = cy + Math.sin(p.angle) * p.orbitR * 0.35;
+    // Advance planet angles (degrees converted to radians per frame @60fps ~16ms)
+    planets.forEach(p => { p.angle += p.speed; });
 
-      // Saturn-like rings
-      if (p.rings) {
+    // Draw planets back-to-front based on y position (painter's algorithm)
+    // Position each planet on its tilted ellipse
+    const positioned = planets.map(p => ({
+      ...p,
+      px: cx + Math.cos(p.angle) * p.orbitRx,
+      py: cy + Math.sin(p.angle) * p.orbitRy,
+    }));
+    // Sort by py so closer planets (higher py) are drawn on top
+    positioned.sort((a, b) => a.py - b.py);
+
+    positioned.forEach(p => {
+      const { px, py } = p;
+
+      // Saturn rings — draw before planet (behind it)
+      if (p.hasRings) {
+        const rw = p.r * 2.4, rh = p.r * 0.55;
         ctx.save();
         ctx.translate(px, py);
-        ctx.scale(1, 0.35);
+        // Outer ring
         ctx.beginPath();
-        ctx.ellipse(0, 0, p.r * 2.2, p.r * 2.2, 0, 0, Math.PI*2);
-        ctx.strokeStyle = 'rgba(210,180,110,0.45)';
-        ctx.lineWidth = p.r * 0.45;
+        ctx.ellipse(0, 0, rw, rh, 0, 0, TAU);
+        ctx.strokeStyle = 'rgba(200,170,100,0.40)';
+        ctx.lineWidth = p.r * 0.55;
+        ctx.stroke();
+        // Inner ring gap
+        ctx.beginPath();
+        ctx.ellipse(0, 0, rw*0.78, rh*0.78, 0, 0, TAU);
+        ctx.strokeStyle = 'rgba(200,170,100,0.22)';
+        ctx.lineWidth = p.r * 0.22;
         ctx.stroke();
         ctx.restore();
       }
 
-      // Planet glow
-      const pglow = ctx.createRadialGradient(px, py, 0, px, py, p.r * 1.8);
-      pglow.addColorStop(0, p.color + 'aa');
-      pglow.addColorStop(1, 'transparent');
-      ctx.fillStyle = pglow;
-      ctx.beginPath(); ctx.arc(px, py, p.r * 1.8, 0, Math.PI*2); ctx.fill();
+      // Planet atmosphere glow
+      const atm = ctx.createRadialGradient(px, py, 0, px, py, p.r * 2.0);
+      atm.addColorStop(0,   p.color + '55');
+      atm.addColorStop(0.6, p.color + '18');
+      atm.addColorStop(1,   'transparent');
+      ctx.fillStyle = atm;
+      ctx.beginPath(); ctx.arc(px, py, p.r * 2.0, 0, TAU); ctx.fill();
 
-      // Planet body
-      const pgrad = ctx.createRadialGradient(px - p.r*0.3, py - p.r*0.3, 0, px, py, p.r);
-      pgrad.addColorStop(0, lighten(p.color, 40));
-      pgrad.addColorStop(1, darken(p.color, 30));
-      ctx.fillStyle = pgrad;
-      ctx.beginPath(); ctx.arc(px, py, p.r, 0, Math.PI*2); ctx.fill();
+      // Planet body with shading
+      const lit = ctx.createRadialGradient(
+        px - p.r*0.32, py - p.r*0.32, 0,
+        px, py, p.r
+      );
+      lit.addColorStop(0,   lighten(p.color, 50));
+      lit.addColorStop(0.6, p.color);
+      lit.addColorStop(1,   darken(p.color, 45));
+      ctx.fillStyle = lit;
+      ctx.beginPath(); ctx.arc(px, py, p.r, 0, TAU); ctx.fill();
 
-      // Moon
+      // Earth special: continent patches
+      if (p.name === 'Earth') {
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = '#2d8f4e';
+        [[0.2,0.1,p.r*0.3],[-.3,-.2,p.r*0.22],[ .1,-.3,p.r*0.18]].forEach(([dx,dy,cr]) => {
+          ctx.beginPath(); ctx.arc(px+dx*p.r, py+dy*p.r, cr, 0, TAU); ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      }
+
+      // Moon (Earth only)
       if (p.moon) {
         const m = p.moon;
         m.angle += m.speed;
-        const mx = px + Math.cos(m.angle) * m.orbitR;
-        const my = py + Math.sin(m.angle) * m.orbitR * 0.5;
+        // Moon orbits in the same tilted plane as planets
+        const mx = px + Math.cos(m.angle) * m.orbitRx;
+        const my = py + Math.sin(m.angle) * m.orbitRx * S.TILT;
         ctx.fillStyle = m.color;
-        ctx.beginPath(); ctx.arc(mx, my, m.r, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(mx, my, m.r, 0, TAU); ctx.fill();
       }
     });
   }
 
-  // ── Spawn controller ─────────────────
-  function startSpawn() {
-    if (spawnInterval) return;
-    spawnInterval = setInterval(() => {
-      if (currentScene === 0 && document.getElementById('view-projects')?.classList.contains('active')) {
-        spawnMeteor();
-      }
-    }, 1400);
+  // ── SPAWN TICK ───────────────────────
+  function tick() {
+    if (scene === 0 && document.getElementById('view-projects')?.classList.contains('active')) {
+      spawnMeteor();
+    }
   }
 
-  // ── Swipe ────────────────────────────
-  function onTouchStart(e) {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    isSwiping = true;
+  // ── STOP ─────────────────────────────
+  function stop() {
+    if (raf)        { cancelAnimationFrame(raf); raf = null; }
+    if (spawnTimer) { clearInterval(spawnTimer); spawnTimer = null; }
+    if (canvas)     { canvas._gbInit = false; }
   }
-  function onTouchEnd(e) {
-    if (!isSwiping) return;
-    isSwiping = false;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    if (Math.abs(dx) < 30 || Math.abs(dy) > Math.abs(dx)) return; // not a horizontal swipe
-    if (dx < 0 && currentScene < SCENES-1) switchScene(currentScene+1);
-    if (dx > 0 && currentScene > 0)        switchScene(currentScene-1);
+
+  // ── SWIPE ────────────────────────────
+  let tx0 = 0, ty0 = 0;
+  function onTS(e) { tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY; }
+  function onTE(e) {
+    const dx = e.changedTouches[0].clientX - tx0;
+    const dy = e.changedTouches[0].clientY - ty0;
+    if (Math.abs(dx) < 32 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0 && scene < TOTAL-1) switchScene(scene+1);
+    if (dx > 0 && scene > 0)       switchScene(scene-1);
   }
 
   function switchScene(i) {
-    if (i === currentScene) return;
-    currentScene = i;
+    if (i === scene) return;
+    scene = i;
     buildScene(i);
     updateDots();
-    // show scene name toast
-    const names = ['Deep Space','Nebula','Solar System'];
-    showToast(`✦ ${names[i]}`);
+    showToast(['✦ Deep Space','✦ Nebula','✦ Solar System'][i]);
   }
-
   function updateDots() {
-    document.querySelectorAll('.scene-dot').forEach((dot, i) => {
-      dot.classList.toggle('active', i === currentScene);
-    });
+    document.querySelectorAll('.scene-dot').forEach((d, i) =>
+      d.classList.toggle('active', i === scene)
+    );
   }
 
-  // ── Stop / cleanup ────────────────────
-  function stop() {
-    if (raf)           { cancelAnimationFrame(raf); raf = null; }
-    if (spawnInterval) { clearInterval(spawnInterval); spawnInterval = null; }
-  }
+  // ── HELPERS ──────────────────────────
+  const TAU = Math.PI * 2;
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function pick(arr)  { return arr[Math.floor(Math.random() * arr.length)]; }
+  function toRad(d)   { return d * Math.PI / 180; }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
-  // ── Helpers ───────────────────────────
-  function drawRadialGlow(x, y, r, color) {
+  function radialGlow(x, y, r, color) {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0,   color);
-    g.addColorStop(1,   'transparent');
+    g.addColorStop(0, color); g.addColorStop(1, 'transparent');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   }
-  function toRad(deg) { return deg * Math.PI / 180; }
-  function pickRand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-  function lighten(hex, amt) {
+
+  function hexToRgb(hex) {
     const n = parseInt(hex.replace('#',''), 16);
-    const r = Math.min(255, (n>>16) + amt);
-    const g = Math.min(255, ((n>>8)&0xff) + amt);
-    const b = Math.min(255, (n&0xff) + amt);
-    return `rgb(${r},${g},${b})`;
+    return [(n>>16)&255, (n>>8)&255, n&255];
+  }
+  function lighten(hex, amt) {
+    const [r,g,b] = hexToRgb(hex);
+    return `rgb(${Math.min(255,r+amt)},${Math.min(255,g+amt)},${Math.min(255,b+amt)})`;
   }
   function darken(hex, amt) { return lighten(hex, -amt); }
 
   return { init, stop, switchScene };
 })();
 
-// ── PROJECTS MODULE ─────────────────────
+// ══════════════════════════════════════
+// PROJECTS MODULE
+// ══════════════════════════════════════
 window.Projects = (() => {
-  let _initialized = false;
-
   async function render() {
-    // Only init canvas once; restart if stopped
-    if (!_initialized) {
-      _initialized = true;
-      SpaceScenes.init();
-    } else {
-      // Re-init canvas in case it was stopped
-      SpaceScenes.init();
-    }
+    SpaceScenes.init();
 
     const list  = document.getElementById('projectsList');
     const empty = document.getElementById('projectsEmpty');
@@ -478,13 +483,13 @@ window.Projects = (() => {
         <div class="proj-card-name">${esc(proj.name)}</div>
         ${proj.description ? `<div class="proj-card-desc">${esc(proj.description)}</div>` : ''}
         <div class="proj-card-links">
-          ${proj.url  ? `<a href="${esc(proj.url)}"  class="proj-link-btn" target="_blank" rel="noopener"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Live</a>` : ''}
-          ${proj.repo ? `<a href="${esc(proj.repo)}" class="proj-link-btn" target="_blank" rel="noopener"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>Repo</a>` : ''}
+          ${proj.url  ? `<a href="${esc(proj.url)}"  class="proj-link-btn" target="_blank" rel="noopener"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Live</a>` : ''}
+          ${proj.repo ? `<a href="${esc(proj.repo)}" class="proj-link-btn" target="_blank" rel="noopener"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg> Repo</a>` : ''}
         </div>
         ${tags.length ? `<div class="proj-tags">${tags.map(t=>`<span class="proj-tag">${esc(t)}</span>`).join('')}</div>` : ''}
       `;
       card.addEventListener('click', e => {
-        if (e.target.closest('.proj-card-menu') || e.target.closest('.proj-link-btn')) return;
+        if (e.target.closest('.proj-card-menu,.proj-link-btn')) return;
         openProjectEditor(proj);
       });
       list.appendChild(card);
@@ -501,18 +506,16 @@ function projMenu(e, id, name) {
   e.stopPropagation();
   showContextMenu(e, [
     {
-      label: 'Edit',
-      icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+      label:'Edit',
+      icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
       action: async () => {
-        const projs = await Storage.getProjects();
-        const proj = projs.find(p => p.id === id);
-        if (proj) openProjectEditor(proj);
+        const p = (await Storage.getProjects()).find(p=>p.id===id);
+        if (p) openProjectEditor(p);
       }
     },
     {
-      label: 'Delete',
-      icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>',
-      danger: true,
+      label:'Delete', danger:true,
+      icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>',
       action: async () => {
         if (confirm(`Delete "${name}"?`)) {
           await Storage.deleteProject(id);
@@ -524,11 +527,9 @@ function projMenu(e, id, name) {
   ]);
 }
 
-// ── PROJECT EDITOR ──────────────────────
-let _editingProjectId = null;
-
+let _editProjId = null;
 function openProjectEditor(proj) {
-  _editingProjectId = proj?.id || null;
+  _editProjId = proj?.id || null;
   document.getElementById('projNameInput').value = proj?.name || '';
   document.getElementById('projUrlInput').value  = proj?.url  || '';
   document.getElementById('projRepoInput').value = proj?.repo || '';
@@ -539,22 +540,21 @@ function openProjectEditor(proj) {
 }
 function closeProjectEditor() {
   document.getElementById('projectEditorOverlay').classList.add('hidden');
-  _editingProjectId = null;
+  _editProjId = null;
 }
 async function saveProject() {
   const name = document.getElementById('projNameInput').value.trim();
   if (!name) { showToast('Enter a project name'); return; }
   await Storage.saveProject({
-    id: _editingProjectId, name,
+    id: _editProjId, name,
     url:         document.getElementById('projUrlInput').value.trim(),
     repo:        document.getElementById('projRepoInput').value.trim(),
     tags:        document.getElementById('projTagsInput').value.trim(),
-    description: document.getElementById('projDescInput').value.trim()
+    description: document.getElementById('projDescInput').value.trim(),
   });
   closeProjectEditor();
   showToast('Project saved ✓');
   Projects.render(); refreshStats();
 }
 
-// Helper used by app.js stats
-function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+function setText(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}

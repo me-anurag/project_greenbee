@@ -77,13 +77,17 @@
 <div class="app-shell" id="appShell">
 
   <header class="topbar" id="topbar">
-    <button class="hamburger" onclick="openPanel()" aria-label="Open menu">
+    <button class="hamburger" id="hamburgerBtn" onclick="openPanel()" aria-label="Open menu">
       <span></span><span></span><span></span>
+    </button>
+    <!-- Back button always exists in DOM, shown/hidden via CSS class -->
+    <button class="topbar-back-btn hidden" id="backBtn" onclick="navigateBack()" aria-label="Back to Home">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      <span>Home</span>
     </button>
     <div class="topbar-title" id="topbarTitle">
       <span class="logo-g">Green</span><span class="logo-b">Bee</span>
     </div>
-    <div id="topbarRight"></div>
   </header>
 
   <!-- HOME -->
